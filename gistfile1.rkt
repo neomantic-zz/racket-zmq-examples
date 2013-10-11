@@ -1,17 +1,18 @@
 #lang racket
 
-(require (prefix-in zmq (planet jaymccarthy/zeromq:2:1)))
+;;(require (prefix-in zmq (planet jaymccarthy/zeromq:2:1)))
 (require (planet jaymccarthy/zeromq:2:1))
 (require ffi/unsafe)
 
 (define responder
   (thread (lambda ()
             (define (send-response socket request-bytes)
-              (define message (malloc _msg 'raw))
-              (set-cpointer-tag! message 'msg-tag)
-              (let* ([response-string (string-append (bytes->string/utf-8 ) " - echoed!")]
+              (let* ([message (malloc _msg 'raw)]
+                     [response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
                      [response-bytes (string->bytes/utf-8 response-string)]
                      [length (bytes-length response-bytes)])
+                (set-cpointer-tag! message msg-tag)
+                (msg-init-size! message length)
                 (memcpy (msg-data-pointer message) response-bytes length)
                 (dynamic-wind
                   void
@@ -24,26 +25,29 @@
               (socket-bind! socket "tcp://127.0.0.1:1337")
               (let listen ([listening #t])
                 (let* ([port (open-input-bytes (socket-recv! socket))])
-                  (send-response (port->bytes port))
+                  (send-response socket (port->bytes port))
                   (close-input-port port))
-                (listen #t))))))
+                (listen #t))
+              (socket-close! socket)))))
 
 (define requester
   (thread
     (lambda ()
+      (printf "threading\n")
       (let* ([context (context 1)]
              [socket (socket context 'REQ)])
-        (socket-connect! "tcp://127.0.0.1:1337")
+        (socket-connect! socket "tcp://127.0.0.1:1337")
         (define (send-requests times)
           (if (eq? times 0)
-              (begin
-                (display "done sending"))
-              (socket socket (string->bytes/utf-8 "Hello")))
+              (printf "done sending\n")
+              (socket-send! socket (string->bytes/utf-8 "Hello")))
           (send-requests (- times 1)))
+        (send-requests 5)
         (let show-responses ([listening #t])
           (let* ([port (open-input-bytes (socket-recv! socket))])
-            (display (bytes->string/utf-8 (port->bytes port)))
-            (close-input-port port)
-            (socket-close! socket))
+            (printf (string-append (bytes->string/utf-8 (port->bytes port)) "\n"))
+            (close-input-port port))
           (show-responses #t))
-        (send-requests 5)))))
+        (socket-close! socket)))))
+
+(sleep 20)
