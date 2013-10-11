@@ -1,37 +1,36 @@
 #lang racket
 
-;;(require (prefix-in zmq (planet jaymccarthy/zeromq:2:1)))
 (require (planet jaymccarthy/zeromq:2:1))
 (require ffi/unsafe)
 
-(define responder
-  (thread (lambda ()
-            (define (send-response socket request-bytes)
-              (let* ([message (malloc _msg 'raw)]
-                     [response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
-                     [response-bytes (string->bytes/utf-8 response-string)]
-                     [length (bytes-length response-bytes)])
-                (set-cpointer-tag! message msg-tag)
-                (msg-init-size! message length)
-                (memcpy (msg-data-pointer message) response-bytes length)
-                (dynamic-wind
-                  void
-                  (lambda () (socket-send-msg! socket 'NOBLOCK))
-                  (lambda ()
-                    (msg-close! message)
-                    (free message)))))
-            (let* ([context (context 1)]
-                   [socket (socket context 'REP)])
-              (socket-bind! socket "tcp://127.0.0.1:1337")
-              (let listen ([listening #t])
-                (let* ([port (open-input-bytes (socket-recv! socket))])
-                  (send-response socket (port->bytes port))
-                  (close-input-port port))
-                (listen #t))
-              (socket-close! socket)))))
+;; responder
+(thread (lambda ()
+          (define (send-response socket request-bytes)
+            (let* ([message (malloc _msg 'raw)]
+                   [response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
+                   [response-bytes (string->bytes/utf-8 response-string)]
+                   [length (bytes-length response-bytes)])
+              (set-cpointer-tag! message msg-tag)
+              (msg-init-size! message length)
+              (memcpy (msg-data-pointer message) response-bytes length)
+              (dynamic-wind
+                void
+                (lambda () (socket-send-msg! socket 'NOBLOCK))
+                (lambda ()
+                  (msg-close! message)
+                  (free message)))))
+          (let* ([context (context 1)]
+                 [socket (socket context 'REP)])
+            (socket-bind! socket "tcp://127.0.0.1:1337")
+            (let listen ([listening #t])
+              (let* ([port (open-input-bytes (socket-recv! socket))])
+                (send-response socket (port->bytes port))
+                (close-input-port port))
+              (listen #t))
+            (socket-close! socket))))
 
-(define requester
-  (thread
+;; requester
+(thread
     (lambda ()
       (printf "threading\n")
       (let* ([context (context 1)]
@@ -48,6 +47,6 @@
             (printf (string-append (bytes->string/utf-8 (port->bytes port)) "\n"))
             (close-input-port port))
           (show-responses #t))
-        (socket-close! socket)))))
+        (socket-close! socket))))
 
 (sleep 20)
