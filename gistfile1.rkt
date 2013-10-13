@@ -1,52 +1,78 @@
 #lang racket
 
-(require (planet jaymccarthy/zeromq:2:1))
-(require ffi/unsafe)
+(require ffi/unsafe
+         (prefix-in zmq: "../zeromq/net/zmq.rkt"))
+
+;; this half works with my hacked version of zmq
+;; butt hits an error
+
+(define (socket-send-msg! msg socket flag)
+  (dynamic-wind
+    void
+    (lambda ()
+      (zmq:socket-send-msg! msg socket flag))
+    (lambda ()
+      (zmq:msg-close! msg)
+      (free msg))))
+
 
 ;; responder
 (thread (lambda ()
-          (define (send-response socket request-bytes)
-            (let* ([message (malloc _msg 'raw)]
-                   [response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
-                   [response-bytes (string->bytes/utf-8 response-string)]
-                   [length (bytes-length response-bytes)])
-              (set-cpointer-tag! message msg-tag)
-              (msg-init-size! message length)
-              (memcpy (msg-data-pointer message) response-bytes length)
-              (dynamic-wind
-                void
-                (lambda () (socket-send-msg! socket 'NOBLOCK))
-                (lambda ()
-                  (msg-close! message)
-                  (free message)))))
-          (let* ([context (context 1)]
-                 [socket (socket context 'REP)])
-            (socket-bind! socket "tcp://127.0.0.1:1337")
+          (let* ([context (zmq:context 1)]
+                 [socket (zmq:socket context 'REP)])
+            (zmq:socket-bind! socket "tcp://127.0.0.1:1337")
+            (define (send-response request-bytes)
+              (let* ([response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
+                     [response-bytes (string->bytes/utf-8 response-string)]
+                     [message (zmq:make-msg-with-data response-bytes)])
+                (socket-send-msg! message socket 'DONTWAIT)
+                (printf "responder-responded!\n")))
             (let listen ([listening #t])
-              (let* ([port (open-input-bytes (socket-recv! socket))])
-                (send-response socket (port->bytes port))
+              (let* ([port (open-input-bytes (zmq:socket-recv! socket))]
+                     [received (port->bytes port)])
+                (printf "responder-listening2\n")
+                (send-response received)
                 (close-input-port port))
+              (printf (string-append (zmq:strerro (zmq:errno)) "\n"))
               (listen #t))
-            (socket-close! socket))))
+            (zmq:socket-close! socket)
+            (zmq:context-close! context))))
 
 ;; requester
 (thread
     (lambda ()
-      (printf "threading\n")
-      (let* ([context (context 1)]
-             [socket (socket context 'REQ)])
-        (socket-connect! socket "tcp://127.0.0.1:1337")
-        (define (send-requests times)
-          (if (eq? times 0)
-              (printf "done sending\n")
-              (socket-send! socket (string->bytes/utf-8 "Hello")))
-          (send-requests (- times 1)))
-        (send-requests 5)
-        (let show-responses ([listening #t])
-          (let* ([port (open-input-bytes (socket-recv! socket))])
-            (printf (string-append (bytes->string/utf-8 (port->bytes port)) "\n"))
-            (close-input-port port))
-          (show-responses #t))
-        (socket-close! socket))))
+      (let* ([context (zmq:context 1)]
+             [socket (zmq:socket context 'REQ)])
+        (zmq:socket-connect! socket "tcp://127.0.0.1:1337")
+        (define (send-message number)
+          (let* ([msg-string (string-append "Hello " (number->string number))]
+                 [msg-bytes (string->bytes/utf-8 msg-string)])
+            (printf "requester-sending\n")
+            (socket-send-msg! (zmq:make-msg-with-data msg-bytes) socket 'DONTWAIT)
+            (printf (string-append (zmq:strerro (zmq:errno)) "\n"))
+            (printf "requester-sent\n")))
+        (define (send-requests count)
+          (if (eq? count 0)
+              (printf "finished\n")
+              (begin
+                (send-message count)
+                ;;(sleep 3)
+                (let ([msg (zmq:make-empty-msg)])
+                  (printf "requester-receiving\n")
+                  ;;(printf (string-append (zmq:strerro (zmq:errno)) "\n"))
+                  (zmq:socket-recv-msg! msg socket 'NOBLOCK)
+                  (dynamic-wind
+                    void
+                    (λ ()
+                       (printf "received some crap")
+                       (bytes-copy (zmq:msg-data msg)))
+                    (λ ()
+                       (zmq:msg-close! msg)
+                       (free msg))))
+                (send-requests (- count 1)))))
+        (send-requests 1)
+        (zmq:socket-close! socket)
+        (zmq:context-close! context))))
 
-(sleep 20)
+(sleep 10)
+
