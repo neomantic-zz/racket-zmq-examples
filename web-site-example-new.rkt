@@ -11,6 +11,7 @@
           [socket (zmq:socket context 'REP)])
      (zmq:socket-bind! socket socket-uri)
      (define (zmq-recv-no/block)
+       (printf "responder-receiving\n")
        (let ([msg (zmq:make-empty-msg)])
          (zmq:socket-recv-msg! msg socket 'NOBLOCK)
          (dynamic-wind
