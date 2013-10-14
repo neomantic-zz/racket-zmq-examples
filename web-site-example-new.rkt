@@ -21,7 +21,8 @@
 
 (thread
  (lambda ()
-   (let* ([socket (zmq:socket (zmq:context 1) 'REQ)])
+   (let* ([context (zmq:context 1)]
+          [socket (zmq:socket context 'REQ)])
      (zmq:socket-bind! socket socket-uri)
      (define (zmq-send-no/block count)
        (printf "requester-sending")
@@ -51,6 +52,8 @@
                (bytes->string/utf-8 (zmq-recv-no/block))
                "\n"))
              (send-request (- count 0))))
-       (send-request 5)))))
+       (send-request 5))
+     (zmq:socket-close! socket)
+     (zmq:context-close! context))))
 
 (sleep 10)
