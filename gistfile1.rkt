@@ -33,7 +33,6 @@
                 (printf "responder-listening2\n")
                 (send-response received)
                 (close-input-port port))
-              (printf (string-append (zmq:strerro (zmq:errno)) "\n"))
               (listen #t))
             (zmq:socket-close! socket)
             (zmq:context-close! context))))
@@ -49,17 +48,14 @@
                  [msg-bytes (string->bytes/utf-8 msg-string)])
             (printf "requester-sending\n")
             (socket-send-msg! (zmq:make-msg-with-data msg-bytes) socket 'DONTWAIT)
-            (printf (string-append (zmq:strerro (zmq:errno)) "\n"))
             (printf "requester-sent\n")))
         (define (send-requests count)
           (if (eq? count 0)
               (printf "finished\n")
               (begin
                 (send-message count)
-                ;;(sleep 3)
                 (let ([msg (zmq:make-empty-msg)])
                   (printf "requester-receiving\n")
-                  ;;(printf (string-append (zmq:strerro (zmq:errno)) "\n"))
                   (zmq:socket-recv-msg! msg socket 'NOBLOCK)
                   (dynamic-wind
                     void
