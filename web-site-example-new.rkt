@@ -3,14 +3,13 @@
 (require ffi/unsafe
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
-(define socket-uri "tcp://127.0.0.1:9991")
 
 (thread
  (lambda ()
    (let* ([context (zmq:context 1)]
           [socket (zmq:socket context 'REP)]
           [port (open-output-file "receiver-log" #:exists 'replace)])
-     (zmq:socket-bind! socket socket-uri)
+     (zmq:socket-bind! socket "tcp://127.0.0.1:1337")
      (define (zmq-recv-no/block)
        (let ([msg (zmq:make-empty-msg)])
          (write "responder-receiving\n" port)
@@ -49,7 +48,7 @@
    (let* ([context (zmq:context 1)]
           [socket (zmq:socket context 'REQ)]
           [port (open-output-file "requester-log" #:exists 'replace)])
-     (zmq:socket-bind! socket socket-uri)
+     (zmq:socket-connect! socket "tcp://127.0.0.1:1337")
      (define (zmq-send-no/block count)
        (write "requester-sending\n" port)
        (let* ([data (string->bytes/utf-8
