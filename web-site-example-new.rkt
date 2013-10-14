@@ -20,7 +20,7 @@
              (zmq:msg-close! msg)
              (free msg)))))
      (define (zmq-send-no/block str)
-       (printf "requester-sending")
+       (printf "responder-sending\n")
        (let* ([bs (string->bytes/utf-8 str)]
              [msg (zmq:make-msg-with-data bs)])
          (dynamic-wind
@@ -32,7 +32,7 @@
              (zmq:msg-close! msg)
              (free msg)))))
      (let listen ([listening #t])
-       (printf "responder-listening")
+       (printf "responder-listening\n")
        (let ([str (bytes->string/utf-8 (zmq-recv-no/block))])
          (printf (string-append str "\n"))
          (zmq-send-no/block (string-append str " - echoed")))
@@ -46,7 +46,7 @@
           [socket (zmq:socket context 'REQ)])
      (zmq:socket-bind! socket socket-uri)
      (define (zmq-send-no/block count)
-       (printf "requester-sending")
+       (printf "requester-sending\n")
        (let* ([data (string->bytes/utf-8
                      (string-append
                       "Hello, "
@@ -55,6 +55,7 @@
          (zmq:socket-send-msg! msg socket 'NOBLOCK)
          (free msg)))
      (define (zmq-recv-no/block)
+       (printf "requester-receiving\n")
        (let ([msg (zmq:make-empty-msg)])
          (zmq:socket-recv-msg! msg socket 'NOBLOCK)
          (dynamic-wind
