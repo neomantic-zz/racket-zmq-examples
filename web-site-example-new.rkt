@@ -34,10 +34,10 @@
          (free msg)))
      (define (zmq-recv-no/block)
        (let ([msg (zmq:make-empty-msg)])
-         (zmq:socket-recv-msg! msg 'NOBLOCK)
+         (zmq:socket-recv-msg! msg socket 'NOBLOCK)
          (dynamic-wind
            void
-           (lambda () (bytes-copy (msg-data msg)))
+           (lambda () (bytes-copy (zmq:msg-data msg)))
            (lambda ()
              (zmq:msg-close! msg)
              (free msg)))))
