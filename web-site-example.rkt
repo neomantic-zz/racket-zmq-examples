@@ -34,7 +34,9 @@
                (string-append
                 "Hello, "
                 (number->string count))))
-             (send-request (- count 0))))
+             (let ([res (zmq:socket-recv! socket)])
+               (printf (bytes->string/utf-8 res))
+               (send-request (- count 0)))))
        (send-request 5)))))
 
 (sleep 10)
