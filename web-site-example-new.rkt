@@ -7,17 +7,38 @@
 
 (thread
  (lambda ()
-   (let* ([socket (zmq:socket (zmq:context 1) 'REP)])
+   (let* ([context (zmq:context 1)]
+          [socket (zmq:socket context 'REP)])
      (zmq:socket-bind! socket socket-uri)
+     (define (zmq-recv-no/block)
+       (let ([msg (zmq:make-empty-msg)])
+         (zmq:socket-recv-msg! msg socket 'NOBLOCK)
+         (dynamic-wind
+           void
+           (lambda () (bytes-copy (zmq:msg-data msg)))
+           (lambda ()
+             (zmq:msg-close! msg)
+             (free msg)))))
+     (define (zmq-send-no/block str)
+       (printf "requester-sending")
+       (let* ([bs (string->bytes/utf-8 str)]
+             [msg (zmq:make-msg-with-data bs)])
+         (dynamic-wind
+           void
+           (lambda ()
+             (zmq:socket-send-msg! msg socket 'NOBLOCK)
+             (void))
+           (lambda ()
+             (zmq:msg-close! msg)
+             (free msg)))))
      (let listen ([listening #t])
        (printf "responder-listening")
-       (let* ([received (zmq:socket-recv! socket)]
-	      [received-str (bytes->string/utf-8 received)])
-	 (printf (string-append received-str "\n"))
-         (zmq:socket-send!
-          socket
-          (string->bytes/utf-8 (string-append received-str " - echoed"))))
-       (listen #t)))))
+       (let ([str (bytes->string/utf-8 (zmq-recv-no/block))])
+         (printf (string-append str "\n"))
+         (zmq-send-no/block (string-append str " - echoed")))
+       (listen #t))
+     (zmq:socket-close! socket)
+     (zmq:context-close! context))))
 
 (thread
  (lambda ()
