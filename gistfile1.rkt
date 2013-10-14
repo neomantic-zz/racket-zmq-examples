@@ -43,25 +43,35 @@
       (let* ([context (zmq:context 1)]
              [socket (zmq:socket context 'REQ)])
         (zmq:socket-connect! socket "tcp://127.0.0.1:1337")
-        (define (send-message number)
-          (let* ([msg-string (string-append "Hello " (number->string number))]
-                 [msg-bytes (string->bytes/utf-8 msg-string)])
-            (printf "requester-sending\n")
-            (socket-send-msg! (zmq:make-msg-with-data msg-bytes) socket 'DONTWAIT)
-            (printf "requester-sent\n")))
-        (for ([count 5])
-          (send-message count)
+        (define (zmq-send-no/block count)
+          (printf "requester-sending\n")
+          (let* ([data (string->bytes/utf-8
+                        (string-append
+                         "Hello, "
+                         (number->string count)))]
+                 [msg (zmq:make-msg-with-data data)])
+            (zmq:socket-send-msg! msg socket 'NOBLOCK)
+            (free msg)))
+        (define (zmq-recv-no/block)
+          (printf "requester-receiving\n")
           (let ([msg (zmq:make-empty-msg)])
-            (printf "requester-receiving\n")
+            (sleep 2)
             (zmq:socket-recv-msg! msg socket 'NOBLOCK)
             (dynamic-wind
               void
-              (λ ()
-                 (printf "received some crap")
-                 (bytes-copy (zmq:msg-data msg)))
-              (λ ()
-                 (zmq:msg-close! msg)
-                 (free msg)))))
+              (lambda ()
+                (printf
+                 (bytes->string/utf-8 (bytes-copy (zmq:msg-data msg))))
+                 (void))
+              (lambda ()
+                (zmq:msg-close! msg)
+                (free msg)))))
+        (for ([count 5])
+          (zmq-send-no/block count)
+          (let ([msg (zmq:make-empty-msg)])
+            (printf "requester-receiving\n")
+            (zmq:socket-recv-msg! msg socket 'NOBLOCK)
+            (zmq-recv-no/block)))
         (zmq:socket-close! socket)
         (zmq:context-close! context))))
 
