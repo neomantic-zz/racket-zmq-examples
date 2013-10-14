@@ -49,24 +49,19 @@
             (printf "requester-sending\n")
             (socket-send-msg! (zmq:make-msg-with-data msg-bytes) socket 'DONTWAIT)
             (printf "requester-sent\n")))
-        (define (send-requests count)
-          (if (eq? count 0)
-              (printf "finished\n")
-              (begin
-                (send-message count)
-                (let ([msg (zmq:make-empty-msg)])
-                  (printf "requester-receiving\n")
-                  (zmq:socket-recv-msg! msg socket 'NOBLOCK)
-                  (dynamic-wind
-                    void
-                    (λ ()
-                       (printf "received some crap")
-                       (bytes-copy (zmq:msg-data msg)))
-                    (λ ()
-                       (zmq:msg-close! msg)
-                       (free msg))))
-                (send-requests (- count 1)))))
-        (send-requests 1)
+        (for ([count 5])
+          (send-message count)
+          (let ([msg (zmq:make-empty-msg)])
+            (printf "requester-receiving\n")
+            (zmq:socket-recv-msg! msg socket 'NOBLOCK)
+            (dynamic-wind
+              void
+              (λ ()
+                 (printf "received some crap")
+                 (bytes-copy (zmq:msg-data msg)))
+              (λ ()
+                 (zmq:msg-close! msg)
+                 (free msg)))))
         (zmq:socket-close! socket)
         (zmq:context-close! context))))
 
