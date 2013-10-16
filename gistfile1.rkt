@@ -8,7 +8,7 @@
 
 (define uri "tcp://127.0.0.1:1337")
 
-(define (zmq-recv-no/block socket)
+(define (zmq-recv-noblock socket)
   (let ([msg (zmq:make-empty-msg)])
     (zmq:socket-recv-msg! msg socket 'NOBLOCK)
     (dynamic-wind
@@ -19,7 +19,7 @@
         (zmq:msg-close! msg)
         (free msg)))))
 
-(define (zmq-send-no/block socket bytes)
+(define (zmq-send-noblock socket bytes)
   (let ([zmq-msg (zmq:make-msg-with-data bytes)])
 	(dynamic-wind
 	  void
@@ -45,7 +45,7 @@
        (string->bytes/utf-8
         (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
      (define (send-response recv-bytes)
-       (zmq-send-no/block socket (make-response-bytes recv-bytes))
+       (zmq-send-noblock socket (make-response-bytes recv-bytes))
        (printf "responder-responded\n"))
      (let listen ()
        (printf "responder-listening\n")
@@ -71,9 +71,9 @@
 	   (printf (string-append (bytes->string/utf-8 recv-bytes) "\n")))
      (for ([count 5])
 	   (printf "requester-sending\n")
-	   (zmq-send-no/block socket (make-request-bytes count))
+	   (zmq-send-noblock socket (make-request-bytes count))
 	   (printf "requester-receiving\n")
-	   (let ([rcvd (zmq-recv-no/block socket)])
+	   (let ([rcvd (zmq-recv-noblock socket)])
 		 (printf-response rcvd)))
 	 (zmq:socket-close! socket)
 	 (zmq:context-close! context))))
