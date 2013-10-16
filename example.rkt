@@ -40,14 +40,14 @@
    (let* ([context (zmq:context 1)]
           [socket (zmq:socket context 'REP)])
      (zmq:socket-bind! socket uri)
+     (define (make-response-bytes recv-bytes)
+       (string->bytes/utf-8
+        (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
      (define (printf-recvd recv-bytes)
        (printf (string-append
                 "Received Data: "
                 (bytes->string/utf-8 recv-bytes)
                 "\n")))
-     (define (make-response-bytes recv-bytes)
-       (string->bytes/utf-8
-        (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
      (let listen ()
        (printf "responder-listening\n")
        ;; this let works, in the sense that that the data is received
