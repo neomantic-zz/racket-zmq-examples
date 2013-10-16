@@ -34,35 +34,35 @@
 (thread
  (lambda ()
    (let* ([context (zmq:context 1)]
-		  [socket (zmq:socket context 'REP)])
-	 (zmq:socket-bind! socket uri)
-	 (define (printf-recvd recv-bytes)
-	   (printf (string-append
-				"Received Data: "
-				(bytes->string/utf-8 recv-bytes)
-				"\n")))
-	 (define (make-response-bytes recv-bytes)
-	   (string->bytes/utf-8
-		(string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
-	 (define (send-response recv-bytes)
-	   (printf-recvd recv-bytes)
-	   (zmq-send-no/block socket (make-response-bytes recv-bytes))
-	   (printf "responder-responded\n"))
-	 (let listen ([listening #t])
-	   (let* ([port (open-input-bytes (zmq:socket-recv! socket))]
-			  [received (port->bytes port)])
-		 (printf "responder-listening\n")
-		 (send-response received)
-		 (close-input-port port))
-	   (listen #t))
-	 (zmq:socket-close! socket)
-	 (zmq:context-close! context))))
+          [socket (zmq:socket context 'REP)])
+     (zmq:socket-bind! socket uri)
+     (define (printf-recvd recv-bytes)
+       (printf (string-append
+                "Received Data: "
+                (bytes->string/utf-8 recv-bytes)
+                "\n")))
+     (define (make-response-bytes recv-bytes)
+       (string->bytes/utf-8
+        (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
+     (define (send-response recv-bytes)
+       (printf-recvd recv-bytes)
+       (zmq-send-no/block socket (make-response-bytes recv-bytes))
+       (printf "responder-responded\n"))
+     (let listen ([listening #t])
+       (let* ([port (open-input-bytes (zmq:socket-recv! socket))]
+              [received (port->bytes port)])
+         (printf "responder-listening\n")
+         (send-response received)
+         (close-input-port port))
+       (listen #t))
+     (zmq:socket-close! socket)
+     (zmq:context-close! context))))
 
 ;; requester
 (thread
  (lambda ()
    (let* ([context (zmq:context 1)]
-		  [socket (zmq:socket context 'REQ)])
+          [socket (zmq:socket context 'REQ)])
 	 (zmq:socket-connect! socket uri)
 	 (define (make-request-bytes count)
 	   (string->bytes/utf-8
