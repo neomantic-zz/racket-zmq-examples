@@ -13,12 +13,15 @@
           (let* ([context (zmq:context 1)]
                  [socket (zmq:socket context 'REP)])
             (zmq:socket-bind! socket uri)
-            (define (send-response request-bytes)
-              (let* ([response-string (string-append (bytes->string/utf-8 request-bytes) " - echoed!")]
-                     [response-bytes (string->bytes/utf-8 response-string)]
-                     [message (zmq:make-msg-with-data response-bytes)])
-                (printf (string-append
-                         response-string "\n"))
+            (define (printf-recvd recv-bytes)
+              (printf (string-append
+                       (bytes->string/utf-8 recv-bytes) "\n")))
+            (define (make-response-bytes recv-bytes)
+              (string->bytes/utf-8
+               (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
+            (define (send-response recv-bytes)
+              (printf-recvd recv-bytes)
+              (let* ([message (zmq:make-msg-with-data (make-response-bytes recv-bytes))])
                 (dynamic-wind
                   void
                   (lambda ()
@@ -60,6 +63,8 @@
               (lambda ()
                 (zmq:msg-close! msg)
                 (free msg)))))
+        (define (printf-response recv-bytes)
+          (printf (string-append (bytes->string/utf-8 recv-bytes) "\n")))
         (define (zmq-recv-no/block)
           (printf "requester-receiving\n")
           (let ([msg (zmq:make-empty-msg)])
@@ -67,10 +72,7 @@
             (dynamic-wind
               void
               (lambda ()
-                (let* ([recv-bytes (bytes-copy (zmq:msg-data msg))]
-                       [recv-string (bytes->string/utf-8 recv-bytes)])
-                  (printf (string-append recv-string "\n")))
-                (void))
+                (bytes-copy (zmq:msg-data msg)))
               (lambda ()
                 (zmq:msg-close! msg)
                 (free msg)))))
@@ -79,7 +81,7 @@
           (let ([msg (zmq:make-empty-msg)])
             (printf "requester-receiving\n")
             (zmq:socket-recv-msg! msg socket 'NOBLOCK)
-            (zmq-recv-no/block)))
+            (printf-response (zmq-recv-no/block))))
         (zmq:socket-close! socket)
         (zmq:context-close! context))))
 
