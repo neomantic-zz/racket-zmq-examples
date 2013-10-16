@@ -93,3 +93,16 @@
 	 (zmq:context-close! context))))
 
 (sleep 10)
+
+;;; output
+;; #<thread:...6f81/example.rkt:42:1>
+;; #<thread:...6f81/example.rkt:75:1>
+;; requester-sending
+;; requester-receiving
+;; socket-recv-msg!: Bad address
+;;   context...:
+;;    /home/neomantic/src/mine/7e687d75d9227ef16f81/example.rkt:75:1
+;; responder-listening
+;; Received Data: Hello, 0
+;; responder-responded
+;; responder-listening
