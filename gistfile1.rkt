@@ -45,15 +45,12 @@
        (string->bytes/utf-8
         (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
      (define (send-response recv-bytes)
-       (printf-recvd recv-bytes)
        (zmq-send-no/block socket (make-response-bytes recv-bytes))
        (printf "responder-responded\n"))
      (let listen ()
-       (let* ([port (open-input-bytes (zmq:socket-recv! socket))]
-              [received (port->bytes port)])
+       (let ([received (zmq:socket-recv! socket)])
          (printf "responder-listening\n")
-         (send-response received)
-         (close-input-port port))
+         (send-response received))
        (listen))
      (zmq:socket-close! socket)
      (zmq:context-close! context))))
