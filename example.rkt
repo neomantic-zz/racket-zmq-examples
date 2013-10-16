@@ -1,6 +1,9 @@
 #lang racket
 
 (require ffi/unsafe
+;; local path, but use the 'msg-creation-defs' branch
+;; from git@github.com:neomantic/zeromq.git
+;; it supports creating messages
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 ;; this half works with my hacked version of zmq
