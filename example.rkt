@@ -8,6 +8,9 @@
 
 (define uri "tcp://127.0.0.1:1337")
 
+;; this is a literally a copy-paste from zmq.rks
+;; sock-recv! procedure, with only the 'NOBLOCK
+;; added
 (define (zmq-recv-noblock socket)
   (let ([msg (zmq:make-empty-msg)])
     (zmq:socket-recv-msg! msg socket 'NOBLOCK)
