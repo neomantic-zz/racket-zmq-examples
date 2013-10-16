@@ -58,9 +58,10 @@
          (printf "responder-responded\n"))
 
        ;; this let fails, no message is received and printed
-       ;; (let ([received (zmq-recv-noblock socket)])
-       ;;   (printf-recvd received)
-       ;;   (send-response received))
+       ;; (let ([recv-bytes (zmq-recv-noblock socket)])
+       ;;   (printf-recvd recv-bytes)
+       ;;   (zmq-send-noblock socket (make-response-bytes recv-bytes))
+       ;;   (printf "responder-responded\n"))
 
        (listen))
      (zmq:socket-close! socket)
