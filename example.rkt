@@ -48,16 +48,14 @@
      (define (make-response-bytes recv-bytes)
        (string->bytes/utf-8
         (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
-     (define (send-response recv-bytes)
-       (zmq-send-noblock socket (make-response-bytes recv-bytes))
-       (printf "responder-responded\n"))
      (let listen ()
        (printf "responder-listening\n")
        ;; this let works, in the sense that that the data is received
        ;; and printed
-       (let ([received (zmq-recv-empty socket)])
-         (printf-recvd received)
-         (send-response received))
+       (let ([recv-bytes (zmq-recv-empty socket)])
+         (printf-recvd recv-bytes)
+         (zmq-send-noblock socket (make-response-bytes recv-bytes))
+         (printf "responder-responded\n"))
 
        ;; this let fails, no message is received and printed
        ;; (let ([received (zmq-recv-noblock socket)])
