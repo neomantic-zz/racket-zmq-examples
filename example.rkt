@@ -53,9 +53,17 @@
        (printf "responder-responded\n"))
      (let listen ()
        (printf "responder-listening\n")
+       ;; this let works, in the sense that that the data is received
+       ;; and printed
        (let ([received (zmq-recv-empty socket)])
          (printf-recvd received)
          (send-response received))
+
+       ;; this let fails, no message is received and printed
+       ;; (let ([received (zmq-recv-noblock socket)])
+       ;;   (printf-recvd received)
+       ;;   (send-response received))
+
        (listen))
      (zmq:socket-close! socket)
      (zmq:context-close! context))))
