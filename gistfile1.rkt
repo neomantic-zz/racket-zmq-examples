@@ -30,12 +30,7 @@
 		(zmq:msg-close! zmq-msg)
 		(free zmq-msg)))))
 
-;; code copied from zmq.rkt
-:; wrapper around zmq.rkt
-(define (zmq-receive-empty socket)
-  (zmq:socket-recv! socket))
-
-;;responder
+;; responder
 (thread
  (lambda ()
    (let* ([context (zmq:context 1)]
@@ -54,7 +49,7 @@
        (printf "responder-responded\n"))
      (let listen ()
        (printf "responder-listening\n")
-       (let ([received (zmq-receive-empty socket)])
+       (let ([received (zmq:socket-recv! socket)])
          (printf-recvd received)
          (send-response received))
        (listen))
