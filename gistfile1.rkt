@@ -48,13 +48,13 @@
        (printf-recvd recv-bytes)
        (zmq-send-no/block socket (make-response-bytes recv-bytes))
        (printf "responder-responded\n"))
-     (let listen ([listening #t])
+     (let listen ()
        (let* ([port (open-input-bytes (zmq:socket-recv! socket))]
               [received (port->bytes port)])
          (printf "responder-listening\n")
          (send-response received)
          (close-input-port port))
-       (listen #t))
+       (listen))
      (zmq:socket-close! socket)
      (zmq:context-close! context))))
 
