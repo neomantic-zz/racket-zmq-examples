@@ -9,37 +9,6 @@
          "zmq-support.rkt"
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
-(define (printf-recvd recv-bytes)
-  (printf/f (string-append
-             "Received Data: "
-             (bytes->string/utf-8 recv-bytes)
-             "\n")))
-
-(define (zmq-send-noblock socket bytes)
-  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
-	(dynamic-wind
-	  void
-	  (lambda ()
-		(zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
-		(void))
-	  (lambda ()
-		(zmq:msg-close! zmq-msg)
-		(free zmq-msg)))))
-
-(define (make-response-bytes recv-bytes)
-  (string->bytes/utf-8
-   (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
-
-(define (make-request-bytes count)
-          (string->bytes/utf-8
-           (string-append
-            "Hello, "
-            (number->string count))))
-
-(define (printf-response recv-bytes)
-          (printf/f (string-append (bytes->string/utf-8 recv-bytes) "\n")))
-
-
 (define (main)
   (call-with-context
    (lambda (context)

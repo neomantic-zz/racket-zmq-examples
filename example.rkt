@@ -11,54 +11,6 @@
 
 (define uri "tcp://127.0.0.1:1344")
 
-;; this is a literally a copy-paste from zmq.rks
-;; sock-recv! procedure, with only the 'NOBLOCK
-;; added
-(define (zmq-recv-noblock socket)
-  (let ([msg (zmq:make-empty-msg)])
-    (zmq:socket-recv-msg! msg socket 'NOBLOCK)
-    (dynamic-wind
-      void
-      (lambda ()
-        (bytes-copy (zmq:msg-data msg)))
-      (lambda ()
-        (zmq:msg-close! msg)
-        (free msg)))))
-
-(define (zmq-send-noblock socket bytes)
-  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
-	(dynamic-wind
-	  void
-	  (lambda ()
-		(zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
-		(void))
-	  (lambda ()
-		(zmq:msg-close! zmq-msg)
-		(free zmq-msg)))))
-
-;; just a wrapper around zmq.rkt's socket-recv!
-(define (zmq-recv-empty socket)
-  (zmq:socket-recv! socket))
-
-(define (make-request-bytes count)
-          (string->bytes/utf-8
-           (string-append
-            "Hello, "
-            (number->string count))))
-
-(define (make-response-bytes recv-bytes)
-  (string->bytes/utf-8
-   (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
-
-(define (printf-response recv-bytes)
-          (printf/f (string-append (bytes->string/utf-8 recv-bytes) "\n")))
-
-(define (printf-recvd recv-bytes)
-  (printf/f (string-append
-             "Received Data: "
-             (bytes->string/utf-8 recv-bytes)
-             "\n")))
-
 (define (request)
   (call-with-context
    (lambda (context)

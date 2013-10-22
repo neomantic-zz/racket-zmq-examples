@@ -2,7 +2,10 @@
 
 (provide (all-defined-out))
 
-(require (prefix-in zmq: "../zeromq/net/zmq.rkt"))
+(require ffi/unsafe
+         racket/place
+         racket/place/distributed
+         (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 ;; Creates a context and passes it to the func
 ;; when the function returns, it closes the context
@@ -27,3 +30,37 @@
         (zmq:socket-close! socket)))))
 
 
+(define (make-request-bytes count)
+  (string->bytes/utf-8
+   (string-append
+    "Hello, "
+    (number->string count))))
+
+(define (make-response-bytes recv-bytes)
+  (string->bytes/utf-8
+   (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
+
+(define (zmq-send-noblock socket bytes)
+  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
+	(dynamic-wind
+	  void
+	  (lambda ()
+		(zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
+		(void))
+	  (lambda ()
+		(zmq:msg-close! zmq-msg)
+		(free zmq-msg)))))
+
+(define (printf-recvd recv-bytes)
+  (printf/f (string-append
+             "Received Data: "
+             (bytes->string/utf-8 recv-bytes)
+             "\n")))
+
+(define (printf-response recv-bytes)
+          (printf/f (string-append (bytes->string/utf-8 recv-bytes) "\n")))
+
+
+;; just a wrapper around zmq.rkt's socket-recv!
+(define (zmq-recv-empty socket)
+  (zmq:socket-recv! socket))
