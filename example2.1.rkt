@@ -23,7 +23,7 @@
     (lambda (context)
       (let ([router-socket (zmq:socket context 'ROUTER)]
             [dealer-socket (zmq:socket context 'DEALER)])
-        (zmq:socket-bind! router-socket "tcp://*:1337")
+        (zmq:socket-bind! router-socket "tcp://127.0.0.1:1337")
         (zmq:socket-bind! dealer-socket "inproc://responders")
         ;; get the worker places
         (worker-channels-put-context (place-channel-get p) context)
