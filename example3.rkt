@@ -10,7 +10,7 @@
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 (define (main)
-  (define worker-url (string-append "inproc://" (symbol->string (make-uuid))))
+  (define worker-url (string-append "inproc://" "blah"))
   (call-with-context
    (lambda (context)
      (printf/f "defining proxy-place\n")
