@@ -6,11 +6,11 @@
          racket/place/distributed
          ffi/unsafe
          "zmq-support.rkt"
+         (planet zitterbewegung/uuid-v4:2:0/uuid-v4)
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
-
 (define (main)
-  (define worker-url (string-append "inproc://" "dc52047c-3b12-11e3-9057-0090f5ccb4d3"))
+  (define worker-url (string-append "inproc://" (symbol->string (make-uuid))))
   (call-with-context
    (lambda (context)
      (printf/f "defining proxy-place\n")
