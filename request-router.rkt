@@ -30,9 +30,9 @@
     (lambda (context)
       (let ([client-socket (zmq:socket context 'ROUTER)]
             [worker-socket (zmq:socket context 'DEALER)])
-        (printf/f "connecting client of proxy\n")
-        (zmq:socket-connect! client-socket "tcp://127.0.0.1:1337")
-        (printf/f "binding worker of proxy\n")
+        (printf/f "connecting client of proxy: ~a\n" worker-url)
+        (zmq:socket-bind! client-socket "tcp://127.0.0.1:1337")
+        (printf/f "binding dealer to proxy\n")
         (zmq:socket-bind! worker-socket worker-url)
         ;; block until it gets the list of workers
         (workers-channels-put-context-and-url
