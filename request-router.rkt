@@ -13,7 +13,7 @@
   (printf/f "defining proxy-place\n")
   (place
    proxy-channel
-   (define worker-url (string-append "inproc://" (symbol->string (make-uuid))))
+   (define worker-url (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
    ;; send each worker the context and the url
    (define (workers-channels-put-context-and-url worker-channels context url)
      (for-each (lambda (channel)
