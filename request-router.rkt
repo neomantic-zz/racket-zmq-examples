@@ -9,18 +9,11 @@
          (planet zitterbewegung/uuid-v4:2:0/uuid-v4)
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
-
-
-
 (define (proxy-p)
   (printf/f "defining proxy-place\n")
   (place
    proxy-channel
-   (define worker-url
-     ;; ugh the string cannot be more that 41 chars (for this lib)
-     ;; and it must be downcase)
-     (substring (string-downcase
-                 (string-append "inproc://" (symbol->string (make-uuid)))) 0 41))
+   (define worker-url (string-append "inproc://" (symbol->string (make-uuid))))
    ;; send each worker the context and the url
    (define (workers-channels-put-context-and-url worker-channels context url)
      (for-each (lambda (channel)
