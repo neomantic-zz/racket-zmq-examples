@@ -14,7 +14,7 @@
 
 (define (proxy-p)
   (place
-   p
+   place-channel
    (define (worker-channels-put-context worker-channels context)
      (for-each (lambda (channel)
                  (place-channel-put channel context))
@@ -26,7 +26,8 @@
         (zmq:socket-bind! router-socket "tcp://127.0.0.1:1337")
         (zmq:socket-bind! dealer-socket "inproc://responders")
         ;; get the worker places
-        (worker-channels-put-context (place-channel-get p) context)
+        (worker-channels-put-context
+         (place-channel-get place-channel) context)
         (dynamic-wind
           void
           (lambda ()
@@ -40,10 +41,10 @@
 (define (worker-p)
   (printf/f "defining worker\n")
   (place
-   w
+   worker-channel
    (call-with-socket
     ;; get the context from the proxy
-    (place-channel-get w)
+    (place-channel-get worker-channel)
     'REP
     (lambda (socket)
       ;; Just a note - there seems to be a bug in 0mq where socket connect has to be
