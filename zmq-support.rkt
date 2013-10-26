@@ -52,14 +52,10 @@
 		(free zmq-msg)))))
 
 (define (printf-recvd recv-bytes)
-  (printf/f (string-append
-             "Received Data: "
-             (bytes->string/utf-8 recv-bytes)
-             "\n")))
+  (printf/f "Received: ~a\n" (bytes->string/utf-8 recv-bytes)))
 
 (define (printf-response recv-bytes)
-          (printf/f (string-append (bytes->string/utf-8 recv-bytes) "\n")))
-
+  (printf/f "~a\n" (bytes->string/utf-8 recv-bytes)))
 
 ;; just a wrapper around zmq.rkt's socket-recv!
 (define (zmq-recv-empty socket)

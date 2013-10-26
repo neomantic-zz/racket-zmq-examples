@@ -10,7 +10,7 @@
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 (define (proxy-p)
-  (printf/f "defining proxy-place\n")
+  (printf/f "defining proxy\n")
   (place
    proxy-channel
    (define worker-url (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
@@ -36,7 +36,7 @@
         (dynamic-wind
           void
           (lambda ()
-            (printf/f "we are proxying\n")
+            (printf/f "connecting router to dealer\n")
             (zmq:proxy! client-socket worker-socket #f)
             (void))
           (lambda ()
@@ -57,9 +57,9 @@
         (zmq:socket-connect! socket url)
         (printf/f "requester-sending\n")
         (zmq:socket-send! socket (make-request-bytes 1))
-        (printf "requester-receiving\n")
-        (let ([rcvd (zmq:socket-recv! socket)])
-          (printf-response rcvd)))))))
+        (printf/f "requester-receiving\n")
+        (let ([recv-bytes (zmq:socket-recv! socket)])
+          (printf-recvd recv-bytes)))))))
 
 (define (workers-list count)
   (for/fold ([workers '()])

@@ -13,25 +13,31 @@
 ;; shared
 
 (define (proxy-p)
+  (printf/f "defining proxy\n")
   (place
    place-channel
-   (define (worker-channels-put-context worker-channels context)
+   (define worker-url "inproc://responders")
+   (define server-url "tcp://127.0.0.1:1337")
+   (define (workers-channels-put-context-and-url worker-channels context url)
      (for-each (lambda (channel)
-                 (place-channel-put channel context))
+                 (place-channel-put channel (list context url)))
                worker-channels))
    (call-with-context
     (lambda (context)
       (let ([router-socket (zmq:socket context 'ROUTER)]
             [dealer-socket (zmq:socket context 'DEALER)])
-        (zmq:socket-bind! router-socket "tcp://127.0.0.1:1337")
-        (zmq:socket-bind! dealer-socket "inproc://responders")
-        ;; get the worker places
-        (worker-channels-put-context
-         (place-channel-get place-channel) context)
+        (printf/f "binding router of proxy to ~a\n" server-url)
+        (zmq:socket-bind! router-socket server-url)
+        (printf/f "binding dealter of proxy to ~a\n" worker-url)
+        (zmq:socket-bind! dealer-socket worker-url)
+        ;; block untill we receive all the workers
+        ;; and send them the context and the worker-url
+        (workers-channels-put-context-and-url
+         (place-channel-get place-channel) context worker-url)
         (dynamic-wind
           void
           (lambda ()
-            (printf/f "proxying bitches\n")
+            (printf/f "connecting router to dealer\n")
             (zmq:proxy! router-socket dealer-socket #f)
             (void))
           (lambda ()
@@ -42,20 +48,23 @@
   (printf/f "defining worker\n")
   (place
    worker-channel
-   (call-with-socket
-    ;; get the context from the proxy
-    (place-channel-get worker-channel)
-    'REP
-    (lambda (socket)
-      ;; Just a note - there seems to be a bug in 0mq where socket connect has to be
-      ;; called before socket bind for inproc
-      (zmq:socket-connect! socket "inproc://responders")
-      (let listen ()
-        (printf/f "worker-listening\n")
-        (let ([recv-bytes (zmq:socket-recv! socket)])
-          (printf/f "worker-sending\n")
-          (zmq:socket-send! socket (make-response-bytes recv-bytes)))
-        (listen))))))
+   (let* ([context-and-url (place-channel-get worker-channel)]
+          [context (car context-and-url)]
+          [url (cadr context-and-url)])
+     (call-with-socket context
+      'REP
+      (lambda (socket)
+        ;; Just a note - there seems to be a bug in 0mq where socket connect has to be
+        ;; called before socket bind for inproc
+        (printf/f "connect worker to ~a\n" url)
+        (zmq:socket-connect! socket url)
+        (let listen ()
+          (printf/f "worker-listening\n")
+          (let ([recv-bytes (zmq:socket-recv! socket)])
+            (printf-recvd recv-bytes)
+            (printf/f "worker-responding\n")
+            (zmq:socket-send! socket (make-response-bytes recv-bytes)))
+          (listen)))))))
 
 (define (workers-list count)
   (for/fold ([workers '()])
