@@ -13,7 +13,7 @@
 ;; since this is a zmq inproc transfer, the context must be
 ;; shared
 
-(define (make-proxy-place server-url)
+(define (make-proxy-place)
   (printf/f "defining proxy\n")
   (place
    place-channel
@@ -26,13 +26,9 @@
           (zmq:socket-bind! router-socket server-url)
           (printf/f "binding dealter of proxy to ~a\n" worker-url)
           (zmq:socket-bind! dealer-socket worker-url)
-          (let ([router-socket (zmq:socket context 'ROUTER)]
-                [dealer-socket (zmq:socket context 'DEALER)])
-            ;; block until workers arrive, and
-            ;; then send each a context and a url
-            (for-each (lambda (channel)
-                        (place-channel-put channel (list context worker-url)))
-                  (place-channel-get place-channel)))))))))
+          (for-each (lambda (channel)
+                      (place-channel-put channel (list context worker-url)))
+                    (place-channel-get place-channel))))))))
 
 (define (make-worker-place)
   (printf/f "defining worker\n")
