@@ -13,47 +13,37 @@
 ;; since this is a zmq inproc transfer, the context must be
 ;; shared
 
-(define (proxy-p)
+(define (make-proxy-place server-url)
   (printf/f "defining proxy\n")
   (place
    place-channel
    (define worker-url "inproc://responders")
    (define server-url "tcp://127.0.0.1:1337")
-   (define (workers-channels-put-context-and-url worker-channels context url)
-     (for-each (lambda (channel)
-                 (place-channel-put channel (list context url)))
-               worker-channels))
-   (call-with-context
-    (lambda (context)
-      (let ([router-socket (zmq:socket context 'ROUTER)]
-            [dealer-socket (zmq:socket context 'DEALER)])
-        (printf/f "binding router of proxy to ~a\n" server-url)
-        (zmq:socket-bind! router-socket server-url)
-        (printf/f "binding dealter of proxy to ~a\n" worker-url)
-        (zmq:socket-bind! dealer-socket worker-url)
-        ;; block untill we receive all the workers
-        ;; and send them the context and the worker-url
-        (workers-channels-put-context-and-url
-         (place-channel-get place-channel) context worker-url)
-        (dynamic-wind
-          void
-          (lambda ()
-            (printf/f "connecting router to dealer\n")
-            (zmq:proxy! router-socket dealer-socket #f)
-            (void))
-          (lambda ()
-            (zmq:socket-close! router-socket)
-            (zmq:socket-close! dealer-socket))))))))
+   (call-with-context (lambda (context)
+     (call-with-router-dealer-sockets context
+        (lambda (router-socket dealer-socket)
+          (printf/f "binding router of proxy to ~a\n" server-url)
+          (zmq:socket-bind! router-socket server-url)
+          (printf/f "binding dealter of proxy to ~a\n" worker-url)
+          (zmq:socket-bind! dealer-socket worker-url)
+          (let ([router-socket (zmq:socket context 'ROUTER)]
+                [dealer-socket (zmq:socket context 'DEALER)])
+            ;; block until workers arrive, and
+            ;; then send each a context and a url
+            (for-each (lambda (channel)
+                        (place-channel-put channel (list context worker-url)))
+                  (place-channel-get place-channel)))))))))
 
-(define (worker-p)
+(define (make-worker-place)
   (printf/f "defining worker\n")
   (place
    worker-channel
+   ;; block until we receive the context and the url from the proxy
    (let* ([context-and-url (place-channel-get worker-channel)]
           [context (car context-and-url)]
           [url (cadr context-and-url)])
-     (call-with-socket context
-      'REP
+     (call-with-rep-socket
+      context
       (lambda (socket)
         ;; Just a note - there seems to be a bug in 0mq where socket connect has to be
         ;; called before socket bind for inproc
@@ -67,13 +57,13 @@
             (zmq:socket-send! socket (make-response-bytes recv-bytes)))
           (listen)))))))
 
-(define (workers-list count)
+(define (make-workers count)
   (for/fold ([workers '()])
       ([i count])
-    (append workers (list (worker-p)))))
+    (append workers (list (make-worker-place)))))
 
 (define (main)
-  (let ([proxy (proxy-p)])
+  (let ([proxy-place (make-proxy-place)])
     ;; send the proxy the workers, so the proxy can send the worker the context
-    (place-channel-put proxy (workers-list 5))
-    (place-channel-get proxy)))
+    (place-channel-put proxy-place (make-workers 5))
+    (place-channel-get proxy-place)))

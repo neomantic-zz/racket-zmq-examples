@@ -29,6 +29,18 @@
       (lambda ()
         (zmq:socket-close! socket)))))
 
+(define (call-with-req-socket context func)
+  (call-with-socket
+   context 'REQ
+   (lambda (socket)
+     (func socket))))
+
+(define (call-with-rep-socket context func)
+  (call-with-socket
+   context 'REP
+   (lambda (socket)
+     (func socket))))
+
 ;; just a wrapper around zmq.rkt's socket-recv!
 (define (zmq-recv-empty socket)
   (zmq:socket-recv! socket))
@@ -43,3 +55,17 @@
       (lambda ()
         (zmq:msg-close! zmq-msg)
         (free zmq-msg)))))
+
+(define (call-with-router-dealer-sockets context func)
+  (let ([router-socket (zmq:socket context 'DEALER)]
+        [dealer-socket (zmq:socket context 'ROUTER)])
+    (dynamic-wind
+      void
+      (lambda ()
+        (func router-socket dealer-socket)
+        (printf/f "connecting router to dealer\n")
+        (zmq:proxy! router-socket dealer-socket #f)
+        (void))
+      (lambda ()
+        (zmq:socket-close! router-socket)
+        (zmq:socket-close! dealer-socket)))))
