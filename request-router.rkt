@@ -17,9 +17,14 @@
    (define worker-url (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
    ;; send each worker the context and the url
    (define (workers-channels-put-context-and-url worker-channels context url)
-     (for-each (lambda (channel)
-                 (place-channel-put channel (list context url)))
-               worker-channels))
+     (let loop ([workers worker-channels]
+                [count 0])
+       (if (empty? workers)
+           #f
+           (begin
+             (place-channel-put (car workers)
+                                (list (+ count 1) context url))
+             (loop (cdr workers) (+ count 1))))))
    (define server-url "tcp://127.0.0.1:1337")
    (call-with-context
     (lambda (context)
@@ -49,8 +54,9 @@
   (place
    worker-channel
    (let* ([context-and-url (place-channel-get worker-channel)]
-          [context (car context-and-url)]
-          [url (cadr context-and-url)])
+          [context (cadr context-and-url)]
+          [url (caddr context-and-url)]
+          [uuid (number->string (car context-and-url))])
      (call-with-socket context
       'REQ
       (lambda (socket)
