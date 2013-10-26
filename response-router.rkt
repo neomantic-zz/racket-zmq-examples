@@ -38,7 +38,7 @@
    (place
     place-channel
     (call-with-context (lambda (context)
-      (call-with-router-dealer-sockets
+      (zmq-router-dealer-proxy
        context
        (lambda (router-socket dealer-socket)
          (printf/f "binding router of proxy to ~a\n" server-url)

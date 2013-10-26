@@ -56,7 +56,7 @@
         (zmq:msg-close! zmq-msg)
         (free zmq-msg)))))
 
-(define (call-with-router-dealer-sockets context func)
+(define (zmq-router-dealer-proxy context func)
   (let ([router-socket (zmq:socket context 'DEALER)]
         [dealer-socket (zmq:socket context 'ROUTER)])
     (dynamic-wind

@@ -40,7 +40,7 @@
       (define worker-url (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
       (call-with-context
        (lambda (context)
-         (call-with-router-dealer-sockets
+         (zmq-router-dealer-proxy
           context
           (lambda (router-socket dealer-socket)
             (printf/f "connecting dealer of proxy: ~a\n" server-url)
