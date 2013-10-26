@@ -10,30 +10,38 @@
          "example-support.rkt"
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
+;; providing these makes these bindings available to the places
+(provide worker-url
+         server-url
+         make-worker-place)
+
 (define worker-url "inproc://responders")
 (define server-url "tcp://127.0.0.1:1337")
-(provide (all-defined-out))
 
+  ;; create a worker place
 (define (make-worker-place)
-  (printf/f "defining worker\n")
+  (printf/f "creating worker\n")
   (place
    worker-channel
    (call-with-rep-socket
-      ;; block until we receive the context and the url from the proxy))
+      ;; block until we receive the context and the url from the proxy
+      ;; on the worker channel
       (place-channel-get worker-channel)
       (lambda (socket)
-        (printf/f "connect worker to ~a\n" worker-url)
+        ;; connect worker
         (zmq:socket-connect! socket worker-url)
+        ;; listen to request, print what's received and
+        ;; return a response
         (let listen ()
-          (printf/f "worker-listening\n")
           (let ([recv-bytes (zmq:socket-recv! socket)])
             (printf-recvd recv-bytes)
-            (printf/f "worker-responding\n")
             (zmq:socket-send! socket (make-response-bytes recv-bytes)))
           (listen))))))
 
 (define (main)
-  (printf/f "defining proxy\n")
+  (printf/f "creating proxy\n")
+  ;; create proxy as a place (on a separate thread) and
+  ;; capture it with a wait, so execution doesn't stop
   (place-wait
    (place
     place-channel
@@ -41,12 +49,11 @@
       (zmq-router-dealer-proxy
        context
        (lambda (router-socket dealer-socket)
-         (printf/f "binding router of proxy to ~a\n" server-url)
+         ;; bind to server url
          (zmq:socket-bind! router-socket server-url)
-         (printf/f "binding dealer of proxy to ~a\n" worker-url)
+         ;; bind (not connect) to server worker-url
          (zmq:socket-bind! dealer-socket worker-url)
+         ;; make each worker, and pass each a context, which must be
+         ;; shared between the proxy and the worker in inproc transfers
          (for ([count 5])
-           ;; since this is a zmq inproc transfer, the context must be shared
-          ;; between the proxy and the workers
-          ;; make the worker, and then send the worker the context
            (place-channel-put (make-worker-place) context)))))))))

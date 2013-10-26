@@ -63,7 +63,6 @@
       void
       (lambda ()
         (func router-socket dealer-socket)
-        (printf/f "connecting router to dealer\n")
         (zmq:proxy! router-socket dealer-socket #f)
         (void))
       (lambda ()

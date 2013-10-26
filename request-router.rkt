@@ -15,37 +15,48 @@
 (provide (all-defined-out))
 
 (define (make-worker-place)
-  (printf/f "defining worker\n")
+  (printf/f "creating worker\n")
   (place
    worker-channel
    ;; block until we receive the context, the url, and worker number from the proxy
-   (let ([context-and-url (place-channel-get worker-channel)])
+   (let* ([from-proxy (place-channel-get worker-channel)]
+          [context (car from-proxy)]
+          [worker-url (cadr from-proxy)]
+          [worker-number (number->string (caddr from-proxy))])
      (call-with-req-socket
-      (car context-and-url)
-     (lambda (socket)
-       (printf/f "connecting worker to ~a\n" (cadr context-and-url))
-       (zmq:socket-connect! socket (cadr context-and-url))
-       (for ([count 100000])
-         (printf "requester-sending\n")
-         (zmq:socket-send! socket (make-request-bytes "number" count))
-         (printf "requester-receiving\n")
-         (let ([recv-bytes (zmq:socket-recv! socket)])
-           (printf-recvd recv-bytes))))))))
+      context
+      (lambda (socket)
+        ;; connect the worker to the url
+        (zmq:socket-connect! socket worker-url)
+        ;; send requests
+        (for ([count 100000])
+          (zmq:socket-send! socket (make-request-bytes worker-number count))
+          (let ([recv-bytes (zmq:socket-recv! socket)])
+            (printf-recvd recv-bytes))))))))
 
 (define (main)
-  (printf/f "defining proxy\n")
+  (printf/f "creating proxy\n")
+  ;; create proxy as a place (on a separate thread) and
+  ;; capture it with a wait, so execution doesn't stop
   (place-wait
      (place
       proxy-channel
-      (define worker-url (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
+      ;; since the worker-url generation is dynamic, it cannot be shared via
+      ;; a provide, but must be passed in a channel
+      (define worker-url
+        (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
       (call-with-context
        (lambda (context)
          (zmq-router-dealer-proxy
           context
           (lambda (router-socket dealer-socket)
-            (printf/f "connecting dealer of proxy: ~a\n" server-url)
+            ;; connect (not bind) router to server url
             (zmq:socket-connect! router-socket server-url)
-            (printf/f "binding router of proxy: ~a\n" worker-url)
+            ;; bind dealer to worker-url
             (zmq:socket-bind! dealer-socket worker-url)
+            ;; create workers and send each one the context
+            ;; (which must be shared for inproc to work),
+            ;; the url they must connect to, and their id
             (for ([count 5])
-              (place-channel-put (make-worker-place) (list context worker-url))))))))))
+              (place-channel-put
+               (make-worker-place) (list context worker-url count))))))))))
