@@ -32,7 +32,7 @@
           void
           (lambda ()
             (printf/f "proxying bitches\n")
-            (zmq:proxy! router-socket dealer-socket)
+            (zmq:proxy! router-socket dealer-socket #f)
             (void))
           (lambda ()
             (zmq:socket-close! router-socket)

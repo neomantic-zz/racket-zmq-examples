@@ -37,7 +37,7 @@
           void
           (lambda ()
             (printf/f "we are proxying\n")
-            (zmq:proxy! client-socket worker-socket)
+            (zmq:proxy! client-socket worker-socket #f)
             (void))
           (lambda ()
             (zmq:socket-close! client-socket)
