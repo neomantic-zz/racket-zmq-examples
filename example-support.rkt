@@ -2,8 +2,7 @@
 
 (provide (all-defined-out))
 
-(require racket/place
-         racket/place/distributed)
+(require  racket/place/distributed) ;;this gives printf/f
 
 (define (make-request-bytes uuid count)
   (string->bytes/utf-8
