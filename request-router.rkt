@@ -21,8 +21,8 @@
                worker-channels))
    (call-with-context
     (lambda (context)
-      (let ([client-socket (zmq:socket context 'ROUTER)]
-            [worker-socket (zmq:socket context 'DEALER)])
+      (let ([client-socket (zmq:socket context 'DEALER)]
+            [worker-socket (zmq:socket context 'ROUTER)])
         (printf/f "connecting client of proxy: ~a\n" worker-url)
         (zmq:socket-bind! client-socket "tcp://127.0.0.1:1337")
         (printf/f "binding dealer to proxy\n")
@@ -67,5 +67,5 @@
 
 (define (main)
   (let ([proxy (proxy-p)])
-    (place-channel-put proxy (workers-list 5))
+    (place-channel-put proxy (workers-list 1))
     (place-channel-get proxy)))
