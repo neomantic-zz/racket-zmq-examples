@@ -68,5 +68,5 @@
 
 (define (main)
   (let ([proxy (proxy-p)])
-    (place-channel-put proxy (workers-list 1))
+    (place-channel-put proxy (workers-list 5))
     (place-channel-get proxy)))
