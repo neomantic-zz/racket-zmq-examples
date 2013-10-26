@@ -19,13 +19,14 @@
      (for-each (lambda (channel)
                  (place-channel-put channel (list context url)))
                worker-channels))
+   (define server-url "tcp://127.0.0.1:1337")
    (call-with-context
     (lambda (context)
       (let ([client-socket (zmq:socket context 'DEALER)]
             [worker-socket (zmq:socket context 'ROUTER)])
-        (printf/f "connecting client of proxy: ~a\n" worker-url)
-        (zmq:socket-bind! client-socket "tcp://127.0.0.1:1337")
-        (printf/f "binding dealer to proxy\n")
+        (printf/f "connecting dealer of proxy: ~a\n" server-url)
+        (zmq:socket-connect! client-socket server-url)
+        (printf/f "binding router of proxy: ~a\n" worker-url)
         (zmq:socket-bind! worker-socket worker-url)
         ;; block until it gets the list of workers
         (workers-channels-put-context-and-url
