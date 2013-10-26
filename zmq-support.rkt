@@ -29,34 +29,17 @@
       (lambda ()
         (zmq:socket-close! socket)))))
 
-
-(define (make-request-bytes count)
-  (string->bytes/utf-8
-   (string-append
-    "Hello, "
-    (number->string count))))
-
-(define (make-response-bytes recv-bytes)
-  (string->bytes/utf-8
-   (string-append (bytes->string/utf-8 recv-bytes) " - echoed!")))
-
-(define (zmq-send-noblock socket bytes)
-  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
-	(dynamic-wind
-	  void
-	  (lambda ()
-		(zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
-		(void))
-	  (lambda ()
-		(zmq:msg-close! zmq-msg)
-		(free zmq-msg)))))
-
-(define (printf-recvd recv-bytes)
-  (printf/f "Received: ~a\n" (bytes->string/utf-8 recv-bytes)))
-
-(define (printf-response recv-bytes)
-  (printf/f "~a\n" (bytes->string/utf-8 recv-bytes)))
-
 ;; just a wrapper around zmq.rkt's socket-recv!
 (define (zmq-recv-empty socket)
   (zmq:socket-recv! socket))
+
+(define (zmq-send-noblock socket bytes)
+  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
+    (dynamic-wind
+      void
+      (lambda ()
+        (zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
+        (void))
+      (lambda ()
+        (zmq:msg-close! zmq-msg)
+        (free zmq-msg)))))

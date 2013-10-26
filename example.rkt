@@ -7,6 +7,7 @@
          racket/place/distributed
          ffi/unsafe
          "zmq-support.rkt"
+         "example-support.rkt"
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 (define uri "tcp://127.0.0.1:1344")

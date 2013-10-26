@@ -6,6 +6,7 @@
          racket/place/distributed
          ffi/unsafe
          "zmq-support.rkt"
+         "example-support.rkt"
          (planet zitterbewegung/uuid-v4:2:0/uuid-v4)
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 

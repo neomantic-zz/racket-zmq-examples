@@ -7,6 +7,7 @@
          racket/place/distributed
          ffi/unsafe
          "zmq-support.rkt"
+         "example-support.rkt"
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 ;; since this is a zmq inproc transfer, the context must be
