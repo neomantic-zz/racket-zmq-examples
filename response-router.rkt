@@ -1,8 +1,7 @@
 #lang racket
 
-;; run this with racket -tm example.rkt
+;; run this with racket -tm response-router.rkt
 
-(provide main)
 (require racket/place
          racket/place/distributed
          ffi/unsafe
@@ -10,10 +9,8 @@
          "example-support.rkt"
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
-;; providing these makes these bindings available to the places
-(provide worker-url
-         server-url
-         make-worker-place)
+;; providing everything makes these bindings available to the places
+(provide (all-defined-out))
 
 (define worker-url "inproc://responders")
 (define server-url "tcp://127.0.0.1:1337")

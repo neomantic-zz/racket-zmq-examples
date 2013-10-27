@@ -1,6 +1,6 @@
 #lang racket
 
-(provide main)
+;; run this with racket -tm response-router.rkt
 
 (require racket/place
          racket/place/distributed
@@ -10,9 +10,10 @@
          (planet zitterbewegung/uuid-v4:2:0/uuid-v4)
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
+;; providing everything makes these bindings available to the places
+(provide (all-defined-out))
 
 (define server-url "tcp://127.0.0.1:1337")
-(provide (all-defined-out))
 
 (define (make-worker-place)
   (printf/f "creating worker\n")
