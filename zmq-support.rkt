@@ -39,14 +39,16 @@
    (lambda (socket)
      (func socket))))
 
-(define (zmq-router-dealer-proxy context func)
+;; using zmq_proxy to create shared queue
+;;http://api.zeromq.org/3-2:zmq-proxy
+(define (call-with-shared-queue context func)
   (let ([router-socket (zmq:socket context 'DEALER)]
         [dealer-socket (zmq:socket context 'ROUTER)])
     (dynamic-wind
       void
       (lambda ()
         (func router-socket dealer-socket)
-        (zmq:proxy! router-socket dealer-socket #f)
+        (zmq:proxy! router-socket dealer-socket)
         (void))
       (lambda ()
         (zmq:socket-close! router-socket)

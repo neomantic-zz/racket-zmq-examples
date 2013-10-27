@@ -43,7 +43,7 @@
    (place
     place-channel
     (call-with-context (lambda (context)
-      (zmq-router-dealer-proxy
+      (call-with-shared-queue
        context
        (lambda (router-socket dealer-socket)
          ;; bind to server url

@@ -48,7 +48,7 @@
         (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
       (call-with-context
        (lambda (context)
-         (zmq-router-dealer-proxy
+         (call-with-shared-queue
           context
           (lambda (router-socket dealer-socket)
             ;; connect (not bind) router to server url
