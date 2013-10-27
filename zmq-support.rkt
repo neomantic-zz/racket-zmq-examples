@@ -3,8 +3,6 @@
 (provide (all-defined-out))
 
 (require ffi/unsafe
-         racket/place
-         racket/place/distributed
          (prefix-in zmq: "../zeromq/net/zmq.rkt"))
 
 ;; Creates a context and passes it to the func
