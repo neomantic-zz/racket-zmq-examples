@@ -41,21 +41,6 @@
    (lambda (socket)
      (func socket))))
 
-;; just a wrapper around zmq.rkt's socket-recv!
-(define (zmq-recv-empty socket)
-  (zmq:socket-recv! socket))
-
-(define (zmq-send-noblock socket bytes)
-  (let ([zmq-msg (zmq:make-msg-with-data bytes)])
-    (dynamic-wind
-      void
-      (lambda ()
-        (zmq:socket-send-msg! zmq-msg socket 'NOBLOCK)
-        (void))
-      (lambda ()
-        (zmq:msg-close! zmq-msg)
-        (free zmq-msg)))))
-
 (define (zmq-router-dealer-proxy context func)
   (let ([router-socket (zmq:socket context 'DEALER)]
         [dealer-socket (zmq:socket context 'ROUTER)])
