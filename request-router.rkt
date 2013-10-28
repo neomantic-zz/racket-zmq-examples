@@ -40,24 +40,24 @@
   ;; create proxy as a place (on a separate thread) and
   ;; capture it with a wait, so execution doesn't stop
   (place-wait
-     (place
-      proxy-channel
-      ;; since the worker-url generation is dynamic, it cannot be shared via
-      ;; a provide, but must be passed in a channel
-      (define worker-url
-        (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
-      (call-with-context
-       (lambda (context)
-         (call-with-shared-queue
-          context
-          (lambda (router-socket dealer-socket)
-            ;; connect (not bind) router to server url
-            (zmq:socket-connect! router-socket server-url)
-            ;; bind dealer to worker-url
-            (zmq:socket-bind! dealer-socket worker-url)
-            ;; create workers and send each one the context
-            ;; (which must be shared for inproc to work),
-            ;; the url they must connect to, and their id
-            (for ([count 5])
-              (place-channel-put
-               (make-worker-place) (list context worker-url count))))))))))
+   (place
+    proxy-channel
+    ;; since the worker-url generation is dynamic, it cannot be shared via
+    ;; a provide, but must be passed in a channel
+    (define worker-url
+      (string-append "inproc://" (string-downcase (symbol->string (make-uuid)))))
+    (call-with-context
+     (lambda (context)
+       (call-with-shared-queue
+        context
+        (lambda (router-socket dealer-socket)
+          ;; connect (not bind) router to server url
+          (zmq:socket-connect! router-socket server-url)
+          ;; bind dealer to worker-url
+          (zmq:socket-bind! dealer-socket worker-url)
+          ;; create workers and send each one the context
+          ;; (which must be shared for inproc to work),
+          ;; the url they must connect to, and their id
+          (for ([count 5])
+            (place-channel-put
+             (make-worker-place) (list context worker-url count))))))))))
