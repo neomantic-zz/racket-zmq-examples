@@ -21,8 +21,7 @@
   (place
    worker-channel
    (call-with-rep-socket
-      ;; block until we receive the context and the url from the proxy
-      ;; on the worker channel
+      ;; block until we receive the context
       (place-channel-get worker-channel)
       (lambda (socket)
         ;; connect worker
